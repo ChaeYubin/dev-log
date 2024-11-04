@@ -66,7 +66,8 @@ const parsePostDetail = (postPath: string) => {
   const file = fs.readFileSync(postPath, "utf8");
   const { data, content } = matter(file);
   const grayMatter = data;
+  const desc = grayMatter.desc;
   const dateString = dayjs(grayMatter.date).locale("ko").format("YYYY-MM-DD");
 
-  return { ...grayMatter, dateString, content };
+  return { ...grayMatter, dateString, content, desc };
 };

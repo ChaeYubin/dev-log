@@ -7,7 +7,7 @@ interface Props {
 
 const PostDetailPage = async ({ params }: { params: Promise<Props> }) => {
   const title = (await params).postTitle;
-  const post = await getPostDetail(title);
+  const post = getPostDetail(title);
 
   console.log(post);
 
