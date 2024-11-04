@@ -9,8 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/glob": "^8.1.0",
+    "dayjs": "^1.11.13",
+    "glob": "^11.0.0",
     "gray-matter": "^4.0.3",
     "next": "15.0.2",
+    "next-mdx-remote": "^5.0.0",
     "react": "19.0.0-rc-02c0e824-20241028",
     "react-dom": "19.0.0-rc-02c0e824-20241028"
   },
