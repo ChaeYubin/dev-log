@@ -13,6 +13,18 @@ export const getPostList = () => {
   return posts;
 };
 
+// 최근 포스트 3개 조회
+export const getLatestPostList = () => {
+  const posts = getPostList();
+  const sortedPosts = posts.sort((a, b) =>
+    dayjs(b.dateString).isBefore(dayjs(a.dateString)) ? -1 : 1
+  );
+
+  const latestPosts = sortedPosts.slice(0, 3);
+
+  return latestPosts;
+};
+
 // 포스트 상세 조회
 export const getPostDetail = (postTitle: string) => {
   const postPath = getPostPath(postTitle);
