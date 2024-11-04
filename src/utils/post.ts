@@ -14,7 +14,7 @@ export const getPostList = () => {
 };
 
 // 포스트 상세 조회
-export const getPostDetail = async (postTitle: string) => {
+export const getPostDetail = (postTitle: string) => {
   const postPath = getPostPath(postTitle);
   const post = parsePost(postPath);
 
