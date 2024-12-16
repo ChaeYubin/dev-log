@@ -16,9 +16,11 @@
     "next": "15.0.2",
     "next-mdx-remote": "^5.0.0",
     "react": "19.0.0-rc-02c0e824-20241028",
-    "react-dom": "19.0.0-rc-02c0e824-20241028"
+    "react-dom": "19.0.0-rc-02c0e824-20241028",
+    "remark-breaks": "^4.0.0"
   },
   "devDependencies": {
+    "@fec/remark-a11y-emoji": "^4.0.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

@@ -1,5 +1,6 @@
+import PostBody from "@/containers/posts/PostBody";
+import PostHeader from "@/containers/posts/PostHeader";
 import { getPostDetail } from "@/utils/post";
-import { MDXRemote } from "next-mdx-remote/rsc";
 
 interface Props {
   postTitle: string;
@@ -13,7 +14,8 @@ const PostDetailPage = async ({ params }: { params: Promise<Props> }) => {
 
   return (
     <div>
-      <MDXRemote source={post.content} />
+      <PostHeader post={post} />
+      <PostBody post={post} />
     </div>
   );
 };
