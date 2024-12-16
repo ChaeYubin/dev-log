@@ -80,6 +80,7 @@ const parsePostDetail = (postPath: string) => {
   const grayMatter = data;
   const desc = grayMatter.desc;
   const dateString = dayjs(grayMatter.date).locale("ko").format("YYYY-MM-DD");
+  const tags = grayMatter.tags;
 
-  return { ...grayMatter, dateString, content, desc };
+  return { ...grayMatter, dateString, content, desc, tags };
 };
