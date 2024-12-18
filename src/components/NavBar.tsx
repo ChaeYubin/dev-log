@@ -7,12 +7,12 @@ const NavBar = () => {
         <Link href="/">Chae Yubin</Link>
       </h1>
       <div className="ml-auto">
-        <ul className="flex font-bold">
+        <ul className="flex font-semibold">
           <li className="mr-8 text-lg">
             <Link href="/posts">Posts</Link>
           </li>
           <li className="mr-8 text-lg">
-            <Link href="/tags/all">Tags</Link>
+            <Link href="/tags">Tags</Link>
           </li>
           <li className="mr-8 text-lg">
             <Link href="/about">About</Link>

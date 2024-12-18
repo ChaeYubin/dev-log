@@ -25,6 +25,27 @@ export const getLatestPostList = () => {
   return latestPosts;
 };
 
+// 모든 태그 조회
+export const getTags = () => {
+  const posts = getPostList();
+  const tags = new Map<string, number>();
+
+  posts.map((post) =>
+    post.tags?.map((tag: string) => tags.set(tag, (tags.get(tag) || 0) + 1))
+  );
+
+  return tags;
+};
+
+// 태그별 포스트 조회
+export const getPostListByTag = (tag: string) => {
+  const posts = getPostList();
+
+  const filteredPosts = posts.filter((post) => post.tags?.includes(tag));
+
+  return filteredPosts;
+};
+
 // 포스트 상세 조회
 export const getPostDetail = (postTitle: string) => {
   const postPath = getPostPath(postTitle);
