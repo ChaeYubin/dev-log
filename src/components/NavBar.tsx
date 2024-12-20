@@ -3,7 +3,7 @@ import Link from "next/link";
 const NavBar = () => {
   return (
     <div className="py-12 flex items-center">
-      <h1>
+      <h1 className="text-lg font-bold">
         <Link href="/">Chae Yubin</Link>
       </h1>
       <div className="ml-auto">

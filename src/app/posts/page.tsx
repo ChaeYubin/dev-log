@@ -5,11 +5,13 @@ const AllPostPage = () => {
   const postList = getPostList();
 
   return (
-    <>
+    <div className="divide-y divide-gray-200">
       <div className="py-8">
-        <h2 className="text-5xl font-extrabold">All Posts</h2>
+        <h2 className="text-5xl font-extrabold">
+          All Posts ({postList.length})
+        </h2>
       </div>
-      <section>
+      <section className="pt-8">
         <ul>
           {postList.map((post) => (
             <li key={post.title} className="mb-10">
@@ -18,7 +20,7 @@ const AllPostPage = () => {
           ))}
         </ul>
       </section>
-    </>
+    </div>
   );
 };
 

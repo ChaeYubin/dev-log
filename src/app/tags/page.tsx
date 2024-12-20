@@ -10,8 +10,11 @@ const IndexPage = () => {
       <div className="text-5xl font-extrabold flex-none">Tags</div>
       <ul className="inline-flex flex-wrap pl-5">
         {Object.entries(tagsObj).map(([tag, count]) => (
-          <li key={tag} className="py-1 pr-3 items-center">
-            <Link href={`/tags/${tag}`}>{tag}</Link>({count})
+          <li key={tag} className="py-1 pr-3 items-center font-semibold">
+            <Link href={`/tags/${tag}`}>
+              <span className="text-cyan-500">{tag}</span>
+            </Link>{" "}
+            <span className="text-gray-600">({count})</span>
           </li>
         ))}
       </ul>

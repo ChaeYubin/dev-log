@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="ko" className={inter.className}>
       <body>
-        <section className="mx-auto max-w-3xl px-4 xl:max-w-5xl">
+        <section className="mx-auto max-w-2xl px-4 xl:max-w-3xl">
           <NavBar />
           {children}
         </section>

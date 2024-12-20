@@ -16,11 +16,11 @@ const TagPage = ({ params }: Props) => {
   };
 
   return (
-    <>
+    <div className="divide-y divide-gray-200">
       <div className="py-8">
         <h2 className="text-5xl font-extrabold">{capitalize(decodedTag)}</h2>
       </div>
-      <section>
+      <section className="pt-8">
         {postList.length > 0 ? (
           <ul>
             {postList.map((post) => (
@@ -33,7 +33,7 @@ const TagPage = ({ params }: Props) => {
           <p className="text-gray-500">해당 태그에 대한 게시물이 없습니다.</p>
         )}
       </section>
-    </>
+    </div>
   );
 };
 

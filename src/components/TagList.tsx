@@ -1,23 +1,3 @@
----
-title: Next.js로 블로그 만들기
-desc: Next.js로 블로그 만들기
-date: 2024-11-04
----
-
-# heading 1
-
----
-
-## heading 2
-
-### 환영
-
-Next.js로 블로그를 만들어봅시다
-안녕하세용
-
-`인라인 코드`
-
-```tsx showLineNumbers {1-2} title="제목"
 import { Post } from "@/containers/posts/types";
 import Link from "next/link";
 
@@ -41,8 +21,3 @@ const TagList = ({ post, isCenter = false }: Props) => {
 };
 
 export default TagList;
-```
-
-a 링크는 이렇게 사용 [Github Repo](https://github.com/ChaeYubin)
-
-<Callout type="warn">콜아웃은 이렇게 사용</Callout>

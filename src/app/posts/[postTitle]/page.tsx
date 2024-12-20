@@ -10,8 +10,6 @@ const PostDetailPage = async ({ params }: { params: Promise<Props> }) => {
   const title = (await params).postTitle;
   const post = getPostDetail(title);
 
-  console.log(post);
-
   return (
     <div>
       <PostHeader post={post} />

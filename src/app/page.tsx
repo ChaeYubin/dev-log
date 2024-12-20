@@ -6,7 +6,7 @@ const MainPage = () => {
   const postList = getLatestPostList();
 
   return (
-    <>
+    <div className="divide-y divide-gray-200">
       <div className="py-8">
         <h2 className="text-5xl font-extrabold">Latest</h2>
         <p className="text-gray-500 pt-1">
@@ -21,11 +21,11 @@ const MainPage = () => {
             </li>
           ))}
         </ul>
+        <div className="float-right pb-10">
+          <Link href="/posts">All Posts →</Link>
+        </div>
       </section>
-      <div className="float-right pb-10">
-        <Link href="/posts">All Posts →</Link>
-      </div>
-    </>
+    </div>
   );
 };
 
