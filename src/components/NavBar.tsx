@@ -4,7 +4,7 @@ const NavBar = () => {
   return (
     <div className="py-12 flex items-center">
       <h1 className="text-lg font-bold">
-        <Link href="/">Chae Yubin</Link>
+        <Link href="/">Chaerrot🥕</Link>
       </h1>
       <div className="ml-auto">
         <ul className="flex font-semibold">
