@@ -12,7 +12,7 @@ const TagList = ({ post, isCenter = false }: Props) => {
       className={`flex space-x-3 text-sm ${isCenter ? "justify-center" : ""}`}
     >
       {post.tags.map((tag) => (
-        <li key={tag} className="font-semibold text-cyan-500">
+        <li key={tag} className="font-semibold text-primary">
           <Link href={`/tags/${tag}`}>{tag}</Link>
         </li>
       ))}

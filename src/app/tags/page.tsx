@@ -12,7 +12,7 @@ const IndexPage = () => {
         {Object.entries(tagsObj).map(([tag, count]) => (
           <li key={tag} className="py-1 pr-3 items-center font-semibold">
             <Link href={`/tags/${tag}`}>
-              <span className="text-cyan-500">{tag}</span>
+              <span className="text-primary">{tag}</span>
             </Link>{" "}
             <span className="text-gray-600">({count})</span>
           </li>

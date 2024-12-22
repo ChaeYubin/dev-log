@@ -11,7 +11,7 @@ const RecentPostItem = ({ post }: { post: Post }) => {
       {post.tags && post.tags.length > 0 && <TagList post={post} />}
       <p className="text-gray-500 py-5">{post.desc}</p>
       <Link href={post.url}>
-        <span className="text-cyan-500">Read More →</span>
+        <span className="text-primary">Read More →</span>
       </Link>
     </>
   );

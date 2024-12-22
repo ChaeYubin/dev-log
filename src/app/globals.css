@@ -33,7 +33,7 @@
   --destructive: #fecdd3;
   --destructive-foreground: var(--black);
 
-  --primary: 222.2 47.4% 11.2%;
+  --primary: #ed713a;
   --primary-foreground: 210 40% 98%;
 
   --muted: 210 40% 96.1%;
@@ -65,7 +65,7 @@
   --destructive: #7f1d1d;
   --destructive-foreground: var(--white);
 
-  --primary: 210 40% 98%;
+  --primary: #ef8944;
   --primary-foreground: 222.2 47.4% 11.2%;
 
   --muted: 217.2 32.6% 17.5%;
@@ -83,4 +83,12 @@
   .text-balance {
     text-wrap: balance;
   }
+}
+
+a:hover {
+  @apply text-primary;
+}
+
+.no-hover:hover {
+  @apply text-current;
 }
