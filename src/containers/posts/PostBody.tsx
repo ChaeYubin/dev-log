@@ -10,7 +10,7 @@ import { Post } from "./types";
 
 const PostBody = ({ post }: { post: Post }) => {
   return (
-    <div className="prose min-w-full">
+    <div className="prose dark:prose-invert min-w-full pt-8">
       <MDXRemote
         source={post.content}
         components={MdxComponents}
@@ -21,7 +21,8 @@ const PostBody = ({ post }: { post: Post }) => {
               [
                 rehypePrettyCode,
                 {
-                  theme: "github-light",
+                  theme: { light: "github-light", dark: "github-dark-dimmed" },
+                  keepBackground: true,
                 },
               ],
             ],

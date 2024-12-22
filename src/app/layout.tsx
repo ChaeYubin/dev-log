@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import NavBar from "@/components/NavBar";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "Yubin's Blog",
@@ -13,12 +14,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <body>
-        <section className="mx-auto max-w-3xl px-4 xl:max-w-3xl">
-          <NavBar />
-          {children}
-        </section>
+        <ThemeProvider>
+          <section className="mx-auto max-w-3xl px-4 xl:max-w-3xl">
+            <NavBar />
+            {children}
+          </section>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -4,9 +4,9 @@ import { Post } from "./types";
 
 const PostHeader = ({ post }: { post: Post }) => {
   return (
-    <header className="mt-2 mb-8">
+    <header className="pt-2 pb-8">
       <h1 className="mb-3 text-5xl font-extrabold">{post.title}</h1>
-      <div className="flex pt-3 space-x-2 text-sm text-gray-500 dark:text-gray-400">
+      <div className="flex pt-3 space-x-2 text-sm text-gray-500 dark:text-gray-300">
         <div className="flex items-center space-x-1">
           <CalendarDays className="w-3.5" />
           <span>{post.dateString}</span>
@@ -20,7 +20,6 @@ const PostHeader = ({ post }: { post: Post }) => {
           <span>1,034</span>
         </div>
       </div>
-      <hr className="mt-5 mb-10" />
     </header>
   );
 };

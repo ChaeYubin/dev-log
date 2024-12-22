@@ -8,6 +8,7 @@ const config: Config = {
     "./src/containers/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  darkMode: ["class"],
   theme: {
     extend: {
       fontFamily: {
@@ -57,12 +58,23 @@ const config: Config = {
               backgroundColor: "var(--shiki-light-bg)",
               border: "1px solid #e5e7eb",
             },
+            ".dark pre": {
+              backgroundColor: "var(--shiki-dark-bg)",
+              color: "var(--shiki-dark)",
+              border: "1px solid #374151",
+            },
             "pre > code": {
               display: "grid",
             },
             "pre > code > span": {
               paddingLeft: "1.1rem",
               paddingRight: "1rem",
+            },
+            "pre code span": {
+              color: "var(--shiki-light)",
+            },
+            ".dark pre code span": {
+              color: "var(--shiki-dark)",
             },
             "[data-highlighted-line]": {
               backgroundColor: "rgba(253, 224, 71, 0.2)",
@@ -115,6 +127,9 @@ const config: Config = {
             "[data-rehype-pretty-code-title] + pre": {
               marginTop: 0,
               borderRadius: "0 0 0.375rem 0.375rem",
+            },
+            ".dark [data-rehype-pretty-code-title]": {
+              border: "1px solid #374151",
             },
           },
         },

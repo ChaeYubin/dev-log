@@ -5,8 +5,8 @@ const AllPostPage = () => {
   const postList = getPostList();
 
   return (
-    <div className="divide-y divide-gray-200">
-      <div className="py-8">
+    <div className="divide-y divide-gray-200 dark:divide-gray-500">
+      <div className="pt-2 pb-8">
         <h2 className="text-5xl font-extrabold">
           All Posts ({postList.length})
         </h2>

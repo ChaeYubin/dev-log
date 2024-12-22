@@ -6,7 +6,7 @@ const IndexPage = () => {
   const tagsObj = Object.fromEntries(tags.entries());
 
   return (
-    <div className="flex items-center divide-x divide-gray-200 space-x-5 mt-20 px-12">
+    <div className="flex items-center divide-x divide-gray-200 dark:divide-gray-500 space-x-5 mt-20 px-12">
       <div className="text-5xl font-extrabold flex-none">Tags</div>
       <ul className="inline-flex flex-wrap pl-5">
         {Object.entries(tagsObj).map(([tag, count]) => (
@@ -14,7 +14,7 @@ const IndexPage = () => {
             <Link href={`/tags/${tag}`}>
               <span className="text-primary">{tag}</span>
             </Link>{" "}
-            <span className="text-gray-600">({count})</span>
+            <span className="text-gray-500 dark:text-gray-300">({count})</span>
           </li>
         ))}
       </ul>

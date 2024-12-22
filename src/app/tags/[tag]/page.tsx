@@ -16,8 +16,8 @@ const TagPage = ({ params }: Props) => {
   };
 
   return (
-    <div className="divide-y divide-gray-200">
-      <div className="py-8">
+    <div className="divide-y divide-gray-200 dark:divide-gray-500">
+      <div className="pt-2 pb-8">
         <h2 className="text-5xl font-extrabold">{capitalize(decodedTag)}</h2>
       </div>
       <section className="pt-8">

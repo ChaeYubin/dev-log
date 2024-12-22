@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ThemeChanger from "./ThemeChanger";
 
 const NavBar = () => {
   return (
@@ -8,8 +9,8 @@ const NavBar = () => {
           Chaerrot🥕
         </Link>
       </h1>
-      <div className="ml-auto">
-        <ul className="flex font-semibold ">
+      <div className="ml-auto ">
+        <ul className="flex font-semibold items-center">
           <li className="mr-8 text-lg">
             <Link href="/posts" className="no-hover">
               Posts
@@ -25,7 +26,9 @@ const NavBar = () => {
               About
             </Link>
           </li>
-          <li className="text-lg">Dark</li>
+          <li className="cursor-pointer">
+            <ThemeChanger />
+          </li>
         </ul>
       </div>
     </div>

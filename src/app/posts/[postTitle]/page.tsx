@@ -11,7 +11,7 @@ const PostDetailPage = async ({ params }: { params: Promise<Props> }) => {
   const post = getPostDetail(title);
 
   return (
-    <div>
+    <div className="divide-y divide-gray-200 dark:divide-gray-500">
       <PostHeader post={post} />
       <PostBody post={post} />
     </div>
