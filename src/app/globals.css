@@ -84,11 +84,3 @@
     text-wrap: balance;
   }
 }
-
-a:hover {
-  @apply text-primary;
-}
-
-.no-hover:hover {
-  @apply text-current;
-}
