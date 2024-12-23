@@ -22,9 +22,13 @@ const NavBar = () => {
             </Link>
           </li>
           <li className="mr-8 text-lg">
-            <Link href="/about" className="no-hover">
+            <a
+              href="https://yuuub.notion.site/10e963c8b3a7807085eddafd86001967"
+              className="no-hover"
+              target="_blank"
+            >
               About
-            </Link>
+            </a>
           </li>
           <li className="cursor-pointer">
             <ThemeChanger />
