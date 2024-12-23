@@ -10,7 +10,7 @@ import { Post } from "./types";
 
 const PostBody = ({ post }: { post: Post }) => {
   return (
-    <div className="prose dark:prose-invert min-w-full pt-8">
+    <div className="prose dark:prose-invert min-w-full pt-8 pb-16">
       <MDXRemote
         source={post.content}
         components={MdxComponents}

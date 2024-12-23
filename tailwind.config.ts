@@ -14,6 +14,9 @@ const config: Config = {
       fontFamily: {
         pretendard: ["Pretendard"],
       },
+      lineHeight: {
+        "post-title": "1.1",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
