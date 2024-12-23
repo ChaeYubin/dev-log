@@ -1,0 +1,152 @@
+---
+title: Node.js와 Spring이 FormData를 처리하는 방식(JSON 데이터와 파일 함께 보내기)
+desc: Node.js와 Spring이 FormData를 처리하는 방식에 대해 알아보자
+date: 2024-10-25
+tags: [Node.js, Spring, FormData, Next.js, Trouble Shooting]
+---
+
+기존에 진행했던 프로젝트의 프론트엔드는 React(or Next.js), 백엔드는 주로 Java와 Spring으로 구성했었다.
+이번에는 Next.js로 풀 스택 개발을 하고 있는데(백엔드 로직은 API Routes 사용), **JSON 데이터와 파일을 한 요청에 함께 보내야 하는 상황**에서 FormData의 처리 방식이 다르다는 것을 알게 되었다.
+이 글은 두 프레임워크에 어떤 차이 때문에 처리 방식이 다른건지 알아보면서 알게 된 것들을 정리한 글이다.
+
+## 이전에는 이렇게 했었는데..?
+
+먼저, 이번에 Next.js로 진행하고 있는 프로젝트에서 작성한 코드를 가져왔다.
+이전에 Spring으로 구성된 백엔드에 JSON 데이터와 파일을 같이 보내는 로직은 작성해본 적이 있던 터라, 그때와 똑같이 작성해서 요청을 보냈다.
+
+지금 진행하고 있는 프로젝트의 기능을 그대로 들고 올 수는 없으므로, 내용만 살짝 바꿔서 아래와 같은 예시를 들어 설명하겠다.
+
+> 사용자는 게시물의 제목과 내용을 작성할 수 있으며, 이미지를 0장 이상 첨부해 업로드할 수 있다.
+
+```tsx title="프론트엔드 코드"
+const postInfo = { 'title': '제목', 'content': '내용' };
+const imageList = [이미지 파일 1, 이미지 파일 2];  // 첨부한 이미지 File 배열 상태(실제로는 state로 관리되지만 편의를 위해 파일이 담겨있다고 생각하자.)
+
+const formData = new FormData();
+
+// FormData 객체에 postInfo 추가
+formData.append(
+  'postInfo',
+  new Blob([JSON.stringify(postInfo)], {
+    type: 'application/json',
+  }),
+);
+
+// FormData 객체에 이미지 파일 추가
+imageList.forEach((image) => {
+  formData.append('imageList', image);
+});
+
+// POST 요청
+const response = await fetch('/api/~~', { method: 'POST', body: formData });
+```
+
+그런데 요청 결과를 확인했는데 이게 웬걸, DB에 이미지 파일들은 제대로 저장이 되는 반면 postInfo에 담아 보낸 정보가 저장되지 않았다.
+백엔드로 작성된 코드에서 body에 있는 내용을 가져오는 부분은 다음과 같았다.
+
+```tsx title="백엔드 코드"
+export async function POST(req: any) {
+  const formData = await req.formData();
+  const postInfo = formData.get('postInfo');
+  const imageList = formData.getAll('imageList');
+
+  // DB 쿼리문 (이하 생략)
+```
+
+왜일까 살펴보니, 프론트엔드 코드와 백엔드 코드에 하나씩 문제가 있었다.
+
+## 일단은 해결
+
+이런저런 수정을 해보다가, 일단은 제대로 동작하게끔 수정을 했다.
+제대로 동작하는 코드는 다음과 같다.
+
+```tsx title="프론트엔드 코드"
+const postInfo = { 'title': '제목', 'content': '내용' };
+const imageList = [이미지 파일 1, 이미지 파일 2];  // 첨부한 이미지 File 배열 상태(실제로는 state로 관리되지만 편의를 위해 파일이 담겨있다고 생각하자.)
+
+const formData = new FormData();
+
+// FormData 객체에 postInfo 추가
+formData.append('postInfo', JSON.stringify(postInfo));  // 수정
+
+// FormData 객체에 이미지 파일 추가
+imageList.forEach((image) => {
+  formData.append('imageList', image);
+});
+
+// POST 요청
+const response = await fetch('/api/~~', { method: 'POST', body: formData });
+```
+
+```tsx title="백엔드 코드"
+export async function POST(req: any) {
+  const formData = await req.formData();
+  const postInfo = JSON.parse(formData.get('postInfo'));  // 수정
+  const imageList = formData.getAll('imageList');
+
+  // DB 쿼리문 (이하 생략)
+```
+
+달라진 부분은 프론트엔드에서 **JSON 데이터를 Blob 객체로 만들어 보내지 않았다는 점**과, 백엔드에서는 **JSON.parse() 메서드를 사용하여 데이터를 파싱**했다는 것이다.
+만약 이전에 Spring 프로젝트에서 위 로직을 작성해보지 않았더라면, 위와 같은 문제는 애초에 발견하지 못했을 지도 모르겠다.
+그냥 전에 이렇게 짰으니까... 하고 그대로 적용한 게 화근이 된 것이었는데, 어쨌든 이렇게 수정하고 나니 왜 FormData에 다른 형식으로 데이터를 추가하는지 궁금해졌다.
+
+## Blob이 정확히 뭐지?
+
+먼저 Blob에 대해 다시 알아보았다.
+
+> JavaScript에서 Blob(Binary Large Object, 블랍)은 이미지, 사운드, 비디오와 같은 멀티미디어 데이터를 다룰 때 사용할 수 있습니다. 대개 데이터의 크기(Byte) 및 MIME 타입을 알아내거나, 데이터를 송수신을 위한 작은 Blob 객체로 나누는 등의 작업에 사용합니다.
+> 출처: [JS Blob(블랍) 이해하기](https://www.heropy.dev/p/QlwiuS)
+
+> a file-like object of immutable, raw data
+> 출처: [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Blob)
+
+### 이게 뭔 소리인고...
+
+사실 몇 개의 포스트를 읽어보았지만 와닿지는 않았다. 그냥 큰 데이터를 주고받을 때 사용하는거구나~ 라고 이해했었다.
+그러나 JSON 데이터는 그리 큰 데이터도 아닌데, 도대체 왜 Spring에 보낼 때는 왜 Blob 타입을 썼을까? 고민하다가 다른 점은 오직 하나, 프레임워크라는 것이 떠올랐다.
+더불어 다시 보니 **MIME 타입을 알아내는 데 사용한다**는 문구에 눈길이 갔다.
+
+> Blob 객체로 변환했던 이유가 MIME-type을 알아내기 위해서라면?
+
+위와 같은 가설을 세워서 이리저리 구글링해본 결과, 위 가설이 옳았다는 결론을 내릴 수 있었다.
+
+## FormData 파싱 방식의 차이점
+
+백엔드가 Node.js인 경우와 Spring인 경우에 따라 HTTP 요청에 대한 데이터 파싱 방식이 다르기 때문에, 프론트엔드에서도 FormData를 사용해 객체와 파일을 전송할 때 다르게 보내줘야 한다.
+
+### Node.js의 FormData 처리 방식
+
+Node.js에서는 앞서 수정한 것과 같이 **JSON.stringify()**된 문자열을 그냥 받아서 **JSON.parse()**하는 방식으로 처리하면 된다.
+
+```tsx
+formData.append("obj", JSON.stringify(obj)); // JSON 형태로 문자열 변환
+formData.append("file", file); // 파일을 그대로 첨부
+```
+
+`JSON.parse()` 메서드를 사용해 문자열을 객체로 바로 파싱할 수 있다.
+
+### Spring의 FormData 처리 방식
+
+반면, Spring에서는 기본적으로 `multipart/form-data`를 처리할 때, 각 파라미터가 어떻게 전달되는지에 따라 다르게 동작한다.
+Spring에서 `@RequestPart`로 JSON 객체를 처리할 때, 문자열로 전달된 데이터가 `multipart/form-data`로 전송될 경우 단순 텍스트로 처리되므로, JSON 객체를 제대로 인식하지 못할 수 있다.
+
+> multipart/form-data로 전송되는 데이터가 단순 텍스트로 인식되는 경우 서버에서는 415 에러를 발생시킨다.
+> [참고](https://velog.io/@hhhminme/Axios%EC%97%90%EC%84%9C-Post-%EC%8B%9C-Contenttypeapplicationoctet-streamnotsupported-%ED%95%B8%EB%93%A4%EB%A7%81415-%EC%97%90%EB%9F%AC)
+
+따라서 프론트엔드에서 보내려는 객체를 Blob으로 감싸고 MIME-Type을 `application/json`으로 설정해서 `이 데이터는 JSON이야!`라고 알려줘야 하는 것이다.
+
+## 그런데 JSON 데이터와 파일을 함께 보내는 게 맞을까?
+
+위에서 한참 함께 보내는 방법을 설명하고 이제 와서 무슨 소리냐 싶겠지만, 지금도 고민이 되는 문제라 같이 언급하고 넘어가겠다.
+김영한 강사님께서는 이럴 때 보통 [이미지와 JSON 데이터를 함께 보내지 않는다](https://www.inflearn.com/community/questions/307133/image-%EC%A0%84%EC%86%A1%EA%B3%BC-%ED%95%A8%EA%BB%98-%EB%8D%B0%EC%9D%B4%ED%84%B0%EB%8A%94-json%EC%9C%BC%EB%A1%9C-%EB%B3%B4%EB%82%B4%EA%B3%A0-%EC%8B%B6%EC%9D%80-%EA%B2%BD%EC%9A%B0?srsltid=AfmBOoqP3SSmUgzVW9NJALCzZqqzHu5XSUyOSiwpAO_HtLvL2YRNPf5C)고 하셨고, [이 글](https://hellozo0.tistory.com/414)에서 고민하는 지점들에 공감이 가기도 한다.
+그러나 예시로 들었던 걸로 생각해보자면 '게시글 작성' 한 가지 행위인데, 요청을 나누는 게 적절한가..?라는 의문도 있다.
+상황에 따라 다르게 구현되는 것 같긴 하지만, 조금 더 속시원하게 알고 싶기도 하다.
+현업에서는 어떻게들 하시는지 궁금할 뿐이다.
+
+## 그냥은 없다
+
+글을 적으면서 생각해보니, 프론트엔드 입장에서 거꾸로 생각하며 문제의 원인을 파악하느라 시간이 배로 걸린 것 같다.
+하지만 이전에 해당 기능을 구현할 때 왜 Blob으로 감싸서 보내줘야 하는지 제대로 이해했더라면 같은 지점에서 문제가 발생하지 않았을 것이다.
+이전에는 Blob으로 감싸줘야 한다니까 그냥 감싸서 보내고, 이번에는 구현해본 적이 있다는 생각에 그냥 기존 로직을 가져와서 사용하려고 한 그 `게으름`이 문제를 만든 것이다.
+'그냥은 없다'라는 마인드로, 앞으로도 하나하나 제대로 이해하고 넘어가는 습관을 들여야겠다.

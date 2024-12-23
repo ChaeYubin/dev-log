@@ -1,0 +1,135 @@
+---
+title: 중첩된 요소의 이벤트 버블링 방지하기(Next.js <Link>, e.stopPropagation, e.preventDefault)
+date: 2024-10-21
+tags: [Trouble Shooting, Next.js, Event Bubbling]
+---
+
+파일 다운로드 기능을 개발하다가 문제가 발생했다.
+
+대충 아래 그림처럼 생긴 상황에서, Link 컴포넌트를 클릭했을 때는 다른 페이지로 이동하고, Link 컴포넌트 내부에 있는 다운로드 버튼을 클릭하면 파일을 다운로드해야 했다. 당연히 다운로드 버튼을 클릭했을 때는 다른 페이지로 이동이 되지 않아야 했다.
+
+![](https://velog.velcdn.com/images/yuuub/post/31ead434-36e5-4acd-873f-b04821b5f833/image.png)
+
+코드로 보면 다음과 같다. 중요하지 않은 부분은 생략했다.
+
+```tsx
+export default function List() {
+  // ...
+
+  return (
+    <div>
+      <Link href="/detail">
+        // ...
+        <button>다운로드</button>
+      </Link>
+    </div>
+  );
+}
+```
+
+먼저, 다운로드 버튼을 클릭했을 때 파일을 다운로드 하는 로직을 추가했다.
+
+```tsx {12}
+const handleFileDownloadClick = async (fileUrl: string, filename: string) => {
+  const res = await fetch(fileUrl);
+  const blob = await res.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+
+  const element = document.createElement("a");
+  element.setAttribute("href", downloadUrl);
+  element.setAttribute("download", filename);
+
+  // click 이벤트 버블링 방지
+  const preventBubble = (event: MouseEvent) => {
+    event.stopPropagation();
+    console.log("file download event bubble prevented");
+  };
+
+  const button = document.querySelector("#file_download_btn");
+  if (button) {
+    button.appendChild(element);
+  }
+
+  element.addEventListener("click", preventBubble);
+  element.click();
+  element.removeEventListener("click", preventBubble);
+
+  element.parentNode?.removeChild(element);
+  window.URL.revokeObjectURL(downloadUrl);
+};
+```
+
+a 요소를 이용해 파일을 다운로드 할 수 있기 때문에, button 하위에 a 요소를 추가하고 그 a 태그에 이벤트 버블링을 막기 위해 `stopPropagation()` 메서드를 작성해줬다.
+
+```tsx
+export default function List() {
+  // ...
+
+  return (
+    <div>
+      <Link href="/detail">
+        // ...
+        <button
+          id="file_download_btn"
+          onClick={() => handleFileDownloadClick(item)}
+        >
+          다운로드
+        </button>
+      </Link>
+    </div>
+  );
+}
+```
+
+그리고 button을 클릭했을 때 작성해둔 파일 다운로드 클릭 핸들러가 동작하도록 추가했다.
+
+그러나, 저대로 실행하면 파일 다운로드 버튼 클릭 시 다음 두 가지 동작이 모두 발생한다.
+
+1. 파일 다운로드
+2. detail 페이지로 이동
+
+여기서 계속 "나는 클릭 이벤트가 전파되지 않도록 했는데, 왜 자꾸 detail 페이지로 이동하지?"라고 생각했었다.
+
+결론적으로, 원하는 대로 동작하게 하려면 딱 코드 한 줄이 더 있으면 된다. a 요소 클릭에만 너무 신경 쓴 나머지 button에도 클릭 이벤트 리스너가 달려있다는 걸 눈치채지 못했다.
+
+**a 요소의 이벤트 버블링은 막았지만, button 클릭 이벤트는 그대로 남아서 위로 전파됐던 것이다.**
+
+```tsx {11}
+export default function List() {
+  // ...
+
+  return (
+    <div>
+      <Link href= '/detail'>
+        // ...
+        <button
+          id="file_download_btn"
+          onClick={(e) => {
+            e.preventDefault();  // 추가
+            handleFileDownloadClick(item);
+          }>다운로드</button>
+      </Link>
+    </div>
+  );
+}
+
+```
+
+여기서 `e.preventDefault()`와 `e.stopPropagation()`의 차이점을 짧게 정리해보자.
+
+`e.preventDefault` - 고유 동작을 중단시킨다.
+`e.stopPropagation` - 상위 엘리먼트들로의 이벤트 전파를 중단한다.
+
+결론적으로, 위 코드에서 적용한 것으로 풀어보면 다음과 같다.
+
+`e.preventDefault` - button의 클릭 이벤트 동작을 중단
+`e.stopPropagation` - 내부의 a 요소 클릭 이벤트가 상위로 전파되지 않도록 막음
+
+### 참고
+
+같은 사례를 아래 링크에서도 볼 수 있다.
+[e.stopPropagation doesn't work inside nextjs Link component](https://github.com/vercel/next.js/discussions/45588)
+[Prevent Event Bubbling in Next.js for a Link Element within a Nested Component](https://qanswer.space/questions/prevent-event-bubbling-in-nextjs-for-a-link-element-within-a-nested-component)
+
+구글링 했을 때 위 링크들을 봤었지만, 시원하게 정리되어있진 않아서 '도대체 왜 button에 preventDefault를 하는거야?'라고 생각했었던지라 추가로 정리해본다.
+누군가에게는 도움이 될 수 있길🤣
