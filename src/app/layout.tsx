@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import NavBar from "@/components/NavBar";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Analytics } from "@vercel/analytics/nuxt";
 
 export const metadata: Metadata = {
   title: "Yubin's Blog",
@@ -17,11 +18,12 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <section className="mx-auto max-w-3xl px-4 xl:max-w-3xl">
+          <section className="mx-auto max-w-3xl px-4">
             <NavBar />
             {children}
           </section>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
