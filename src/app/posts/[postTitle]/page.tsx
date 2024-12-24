@@ -1,3 +1,4 @@
+import Giscus from "@/components/Giscus";
 import PostBody from "@/containers/posts/PostBody";
 import PostHeader from "@/containers/posts/PostHeader";
 import { getPostDetail } from "@/utils/post";
@@ -14,6 +15,7 @@ const PostDetailPage = async ({ params }: { params: Promise<Props> }) => {
     <div className="divide-y divide-gray-200 dark:divide-gray-500">
       <PostHeader post={post} />
       <PostBody post={post} />
+      <Giscus />
     </div>
   );
 };
