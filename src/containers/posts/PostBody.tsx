@@ -7,10 +7,12 @@ import a11yEmoji from "@fec/remark-a11y-emoji";
 
 import { MdxComponents } from "@/containers/mdx/MdxComponents";
 import { Post } from "./types";
+import Toc from "@/components/Toc";
 
 const PostBody = ({ post }: { post: Post }) => {
   return (
-    <div className="prose dark:prose-invert min-w-full pt-8 pb-16">
+    <div className="prose dark:prose-invert relative min-w-full pt-4 pb-16">
+      <Toc />
       <MDXRemote
         source={post.content}
         components={MdxComponents}
