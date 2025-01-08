@@ -134,7 +134,7 @@ const config: Config = {
             ".dark [data-rehype-pretty-code-title]": {
               border: "1px solid #374151",
             },
-            ".callout-contents > p": {
+            ".callout-contents > p, ol": {
               margin: 0,
             },
           },
