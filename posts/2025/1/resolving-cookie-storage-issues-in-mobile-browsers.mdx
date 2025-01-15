@@ -1,0 +1,363 @@
+---
+title: 모바일 브라우저에서 쿠키가 저장되지 않는 문제 해결하기
+date: 2025-01-15
+desc: 쿠키의 same-site 속성을 알아보고, site를 통일하여 모바일 브라우저에서도 쿠키가 저장되도록 해봅시다.
+tags: [Trouble Shooting, 쿠키]
+---
+
+## 들어가며
+작년 8월 경 [해당 프로젝트](https://github.com/Board-Buddy/front-end)를 배포할 때, 기간 내에 끝내야 했기 때문에 깊게 공부하지 못하고 일단 돌아가게끔 해둔 부분이 꽤 있었다.
+
+이후 작년 11월 경 갑자기 클라이언트와 서버의 통신이 끊겼다.😂 프론트와 백 모두 배포 라인을 건든 적이 없는데, 갑자기 뻗어버려서 문제를 해결하기 위해서 배포 과정을 처음부터 끝까지 되돌아보며 정리했다.
+
+이 글은 배포 과정에서 모바일 브라우저에서 쿠키가 저장되지 않았던 문제를 해결한 방법을 백엔드 팀원분과 함께 정리한 글이다.
+
+
+## 문제 상황
+
+프론트엔드(Next.js 앱을 Vercel로 배포), 백엔드(Spring 앱을 AWS로 배포) 모두 배포를 완료한 상태였으며, 배포 도메인은 다음과 같았다.
+- 프론트엔드: `boardbuddyapp.vercel.app`
+- 백엔드: `boardbuddyapp.com`
+
+PC 웹 브라우저로는 모든 통신이 정상적으로 이루어지고 있었으나, 모바일 웹 브라우저에서는 로그인하고 다음 화면으로 넘어간 이후부터 모든 요청에 대해 401 에러가 발생했다.
+
+더 정확히는, 모바일 운영체제에 따라 다음과 같았다.
+- 안드로이드 : 정상 동작
+- iOS : 401 에러 발생
+
+백엔드 서버에서는 **세션 방식**으로 사용자 인증을 관리하고 있었다. 그렇기 때문에 클라이언트는 서버로부터 받은 session_id 값을 쿠키에 저장해야 하는데, iOS에서는 **쿠키가 제대로 저장되지 않았기 때문에** 위와 같은 문제가 발생한 것이었다.
+
+## 모바일 웹 브라우저에서 쿠키 저장이 안되는 이유
+
+왜 iOS에서는 쿠키가 제대로 저장되지 않았을까? 
+
+### 사파리의 크로스 사이트 추적 방지 옵션
+
+사파리에는 ‘크로스 사이트 추적 방지’ 설정이 존재한다. 기본값은 `on`으로, 이 설정은 타사 쿠키 및 데이터를 기본적으로 차단한다. 따라서 크로스 사이트 추적 방지 옵션을 끄면, 쿠키가 제대로 저장되어 정상적으로 서버와 통신할 수 있었다.
+
+그러나 이 방법은 임시로 문제를 해결하는 방법일 뿐이며, 보안 상 해당 옵션을 켜두는 것이 안전하기 때문에 근본적인 원인을 찾는 것이 좋아보였다.
+또한, 사파리는 이렇게 했을 경우 문제가 해결되었지만 크롬의 경우에는 유사한 설정을 꺼도 서버와 통신이 되지 않았다.
+
+그렇게 좀 더 구글링해보니, 쿠키의 samesite 속성과 관련된 글이 많이 보이기 시작했다.
+
+### 쿠키의 SameSite 속성
+
+먼저, 서버 측에서는 세션 쿠키와 관련된 설정을 `httpOnly`, `secure`, `same-site: none`로 적용한 상태였다. 
+- `httpOnly`: JavaScript를 통해 쿠키에 접근할 수 없게 되어, 악성 스크립트를 통해 쿠키 값에 접근하는 것을 막는다.
+- `secure`: HTTPS를 사용하는 통신에서만 쿠키를 전송한다.
+- `same-site`: 쿠키가 퍼스트 파티 또는 동일 사이트 컨텍스트로 제한되는지 여부를 설정할 수 있다. 3가지 정책(None, Strict, Lax) 중 하나를 선택하여 설정한다.
+    - `None`: 크로스 사이트 요청의 경우에도 쿠키가 항상 전송된다. SameSite가 탄생하기 전의 쿠키 동작 방식과 같다.
+    - `Strict`: 가장 보수적인 정책으로, 크로스 사이트 요청의 경우 쿠키가 전송되지 않는다.
+    - `Lax`: Strict에 비해 느슨한 정책으로, 크로스 사이트 요청의 경우 서드 파티 쿠키는 대체로 전송되지 않지만 몇 가지 예외적인 요청에는 전송된다.
+
+<Callout type="info">
+**site의 의미**
+도메인 접미사와 그 바로 앞의 도메인 부분을 조합한 것을 말한다. 
+ex) `www.web.dev` 도메인은 `web.dev` 사이트의 일부분이다.
+ex) 사용자가 `www.web.dev`에 있고 `static.web.dev`로 이미지를 요청하는 경우 동일 사이트 요청이다.
+</Callout>
+
+이때 문제는 SameSite이다. **아직까지 `SameSite=None`을 인식하지 못하는 클라이언트는 이를 무시하고 특성이 설정되지 않은 것처럼 계속 작동하게 된다고 한다.**
+즉, 버전이 낮은 브라우저에서는 `SameSite=None`을 지원하지 않으므로 `SameSite=Lax`인 것처럼 작동한다는 것이다.
+
+<Callout type="info">
+쿠키 설정 속성과 브라우저의 호환성은 [여기](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#browser_compatibility)에서 확인할 수 있다. 
+</Callout>
+
+그래서 우리 팀은 **site를 통일해서** 이 문제를 해결하기로 했다.
+
+## 프론트엔드와 백엔드 도메인의 site 통일하기
+
+도메인을 통일하는 방법에는 여러 가지가 있다. 하나씩 알아보자.
+
+### 1. 서브도메인 방식
+
+예를 들어, 프론트엔드와 백엔드 API의 서브도메인을 아래처럼 설정한다고 했을 때,
+
+```plain
+프론트엔드: m.boardbuddyapp.com (Vercel)
+백엔드 API: api.boardbuddyapp.com (AWS)
+```
+
+백엔드에서 쿠키와 관련된 도메인 설정 코드를 추가해주면 `.boardbuddyapp.com` 도메인 전체에서 쿠키가 공유된다.
+
+```java
+// 백엔드
+cookie.setDomain(".boardbuddyapp.com");  // 앞에 점(.)을 찍어서 설정
+cookie.setPath("/");
+```
+
+### 2. 경로 기반 분리
+
+제목 그대로 경로를 기반으로 프론트엔드와 백엔드를 분리하는 방법이다.
+예를 들면 아래와 같다.
+
+```plain
+프론트엔드: boardbuddyapp.com/* (Vercel)
+백엔드 API: boardbuddyapp.com/api/* (AWS)
+```
+
+위와 같은 방식으로 진행하려면, DNS 설정을 변경하고 `next.config.js`에 리라이팅 규칙을 추가해야 한다.
+
+1. DNS 설정
+    - `boardbuddyapp.com`의 A 레코드나 CNAME을 Vercel로 설정한다.
+2. 리라이팅 규칙 추가 (next.config.js)
+    
+    ```jsx
+    module.exports = {
+      async rewrites() {
+        return [
+          {
+            source: '/api/:path*',
+            destination: 'https://[AWS_백엔드_주소]/api/:path*'
+          }
+        ]
+      }
+    }
+    ```
+    
+이때 [AWS_백엔드_주소] 부분은 도메인이 아니라 배포된 EC2의 퍼블릭 DNS 주소나 IP 주소를 입력해주어야 하는데, 이러한 경우 EC2의 퍼블릭 주소가 노출될 수 있고, 프론트엔드 앱을 통하지 않고 직접 API 요청이 가능해진다는 단점이 있다.
+악의적인 사용자가 존재한다면 충분히 보안 위협으로 이어질 수 있는 것이다.
+
+이를 방지하기 위해, 리라이팅 규칙을 적용하는 대신 **API Gateway**와 **CloudFront**를 사용할 수 있다.
+
+1. DNS 설정
+2. API Gateway + CloudFront 사용:
+    - API Gateway를 통해 백엔드 API 노출
+    - CloudFront 배포 생성
+        - Vercel을 기본 오리진으로 설정
+        - `/api/*` 경로에 대해서는 API Gateway를 오리진으로 설정
+    - CloudFront 배포의 도메인을 `m.boardbuddyapp.com`으로 설정
+
+두 방식의 장단점은 다음과 같다.
+
+|  | 장점 | 단점 |
+| --- | --- | --- |
+| rewrites 설정 | 추가 비용 X <br/> 간단한 설정 | EC2 주소 노출 |
+| API Gateway + CloudFront | AWS 서비스들로 통합 관리 가능 <br/> 보안성이 더 좋음 | 다소 복잡한 설정 <br/> 비용 발생 |
+
+### 3. Nginx를 사용한 방식
+
+마지막으로, 백엔드에서 Nginx를 사용하고 있었기 때문에 이를 활용한 방법에 대해서도 알아보았다.
+Nginx를 리버스 프록시로 사용하면 하나의 도메인으로 프론트엔드와 백엔드 요청을 모두 처리할 수 있다.
+
+```conf
+server {
+    listen 80;
+    server_name m.boardbuddyapp.com;
+
+    # 프론트엔드 요청 처리 (Vercel)
+    location / {
+        proxy_pass https://boardbuddyapp.vercel.app;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # API 요청을 백엔드로 전달
+    location /api/ {
+        proxy_pass http://localhost:8080;  # Spring 서버
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+NGINX를 사용하려면, 다음과 같은 절차를 거치면 된다고 한다.
+
+1. EC2에 NGINX 설치
+2. SSL/TLS 인증서 설정
+3. DNS 설정에서 `boardbuddyapp.com`을 EC2로 연결
+
+이 방식의 장단점은 다음과 같다.
+
+장점
+
+1. 하나의 도메인으로 모든 요청을 처리할 수 있다.
+2. EC2 주소가 직접 노출되지 않는다.
+3. SSL/TLS 인증서 관리가 단순해진다.
+4. 추가적인 라우팅 규칙이나 캐싱 설정이 용이하다.
+
+단점
+
+1. NGINX 설정과 관리가 필요하다.
+2. EC2에 추가적인 설정이 필요하다.
+3. 모든 트래픽이 NGINX를 거치므로 약간의 지연이 발생할 수 있다.
+
+<Callout>
+이렇게 도메인을 통일하는 방식 몇 가지를 알아보았는데, 우리 팀은
+
+1. 추가 비용이 발생하지 않고
+2. 보안 위험이 존재하지 않으며
+3. 잘 이해하고 있는 방식을 사용하자 (NGINX는 관련 내용이 너무나 방대해서 당장 학습하기에는 무리가 있었다)
+
+는 의견을 모아 서브도메인 방식을 사용하여 모바일 브라우저에서의 쿠키 저장 이슈를 해결했다.
+</Callout>
+
+## 서브도메인 설정해서 site 통일하기
+
+### CNAME 레코드와 SameSite, secure, http-only 속성 설정하기
+
+1. Route53 에서 CNAME 레코드 생성
+![레코드 생성](/image/route53_example.webp)
+- AWS Route 53에서 **CNAME 레코드**를 활용해 `m.boardbuddyapp.com`을 프론트엔드 Vercel 서버 도메인으로 매핑
+- CNAME 설정을 통해서 아래와 같이 동작하게 된다
+    - 모바일 브라우저는 `m.boardbuddyapp.com`에서 요청이 발생했음을 인식
+    - `m.boardbuddyapp.com`은 백엔드 도메인 `boardbuddyapp.com`과 **같은 도메인 체계 내 서브도메인**으로 간주됨
+    - 결과적으로 **Cross-Site 요청이 아닌 Same-Site 요청으로 처리**
+        
+2. 기존에 작성되어있던 YML 파일에서의 `SameSite=None`, `secure`, `http-only` 속성 삭제
+3. nginx 파일 내에 `SameSite=Lax`, `secure`, `http-only` 속성 설정하기
+
+    ```java title="nginx.conf"
+    proxy_cookie_path / "/; Secure; HttpOnly; SameSite=Lax";
+    ```
+
+4. Vercel 프로젝트 설정에서 도메인 추가하기
+![프로젝트 설정에서 도메인 추가](/image/vercel_domain_setting.png)
+
+☝️ **기존의 SameSite=None 속성이 아닌 SameSite=Lax 속성으로 수정한 이유**
+
+어? POST 요청을 하려면 Lax가 아닌 None으로 설정해야하는것 아닌가? 싶을 수 있지만 그렇지 않다.
+
+**일반적으로 Cross-Site 요청**에서는 **POST 요청 또는 iframe, AJAX 요청 등 안전하지 않은 요청에 대해서는** 쿠키가 전송되지 않는다. 
+
+하지만 현재 프로젝트에서는 프론트엔드 도메인을 서브도메인을 설정하여 프론트 서버에서 백엔드 서버로 요청해도 Same-Site 요청으로 간주되도록 설정하였기 때문에 **Lax로 설정하면 CSRF 공격 방지, 악의적인 사이트에서의 요청을 제한하는것과 같이 더 안전한 서비스환경을 구축**할 수 있다.
+
+<Callout>
+만약에 결제 게이트웨이나, 타사 인증 시스템과 같은 외부 서비스와의 통합이 필요한 경우에는 제한이 있을 수 있으므로 외부 서비스와 통합이 필수적이라면 `SameSite=None` 속성을 설정하거나 세션 인증 방식이 아닌 쿠키가 필요하지 않은 JWT 인증 방식을 활용해야한다.
+</Callout>
+
+따라서 최소한 SameSite 조건을 충족한후 `SameSite=Lax` 속성을 설정해야하며, 필요하다면 SameSite=None 속성이나 쿠키가 필요하지 않은 JWT 인증 방식을 활용하자.
+
+☝️ **그렇다면 SameSite=Strict는 안되나?**
+
+안된다.
+**SameSite=Strict는 일반적으로 동일 출처(Same-Origin) 요청에서만 쿠키가 전송된다.**
+
+현재 프로젝트에서 설정한 프론트엔드 도메인(`m.boardbuddyapp.com`)과 백엔드 도메인(`boardbuddyapp.com`)은 동일 출처(Same-Origin)가 아닌 동일 사이트(Same-Site)로 간주하기 때문에 `SameSite=Strict`로 설정하면 쿠키가 전송되지 않는다.
+
+☝️ **yml 파일이 아닌 nginx 파일에 다시 작성한 이유**
+
+현재 프로젝트에서는 인증 관련 세션 쿠키만 필요하다. 기존에는 yml 파일 내에 쿠키 관련 속성을 작성 했었으나, yml 파일에서 쿠키 관련 설정을 하게되면 spring boot 앱에서만 생성되는 쿠키에 대해서만 속성이 설정된다.
+
+따라서 외부에서 얘기치 못한 쿠키가 전송되는 경우를 생각하여 프로젝트 전체에 동일한 쿠키 관련 설정을 적용하기 위해 nginx 파일에 쿠키 관련 속성을 작성했다.
+
+만약에 동적으로 어떠한 요청에 대해서 별도의 쿠키 보안 설정이 필요한 경우에서는 yml 파일에서 쿠키 관련 설정을 작성하고 기존의 nginx 파일의 쿠키 관련 설정을 최소화 하는 방식으로 리팩토링이 필요할 수도 있다.
+
+### 왜 문제가 해결된것일까?
+
+☝️ **Cross-Site와 Same-Site의 차이**
+
+- 기존 구조
+    - 프론트엔드: `https://boardbuddyapp.vercel.app`
+    - 백엔드: `https://boardbuddyapp.com`
+    - 브라우저는 이를 **Cross-Site 요청**으로 간주하여 쿠키를 차단
+- 변경된 구조
+    - 프론트엔드: `https://m.boardbuddyapp.com` 
+    - 백엔드: `https://boardbuddyapp.com` 
+    - 브라우저는 이를 **Same-Site 요청**으로 간주한다. (site: `boardbuddyapp.com`)
+
+☝️ **쿠키의 Domain 속성**
+
+쿠키의 `Domain` 속성이 `boardbuddyapp.com`으로 설정되어 있었다면, 모든 서브도메인에서도 해당 쿠키가 유효하다.
+이를 통해 `m.boardbuddyapp.com`에서 쿠키를 정상적으로 사용할 수 있게 되었다.
+
+### Cross-Site 요청 해결 메커니즘
+
+Cross-Site 요청이란, 브라우저가 site가 다른 두 도메인 간의 요청을 처리하는 상황을 말한다.
+그렇다면 기존에 이슈가 발생했던 구조를 알아보자.
+
+**이슈가 발생했던 구조**
+- **프론트엔드 도메인:** `https://boardbuddyapp.vercel.app`
+- **백엔드 도메인:** `https://boardbuddyapp.com`
+
+브라우저는 두 도메인의 site가 다르기 때문에 요청을 Cross-Site 요청으로 간주했었다.
+
+<br/>
+
+**SameSite 정책의 영향**
+SameSite 쿠키 정책은 Cross-Site 요청에서 쿠키의 전송을 제한한다.
+그렇다면, 브라우저가 쿠키를 전송하지 않는 이유는 2가지를 생각할 수 있다.
+
+1. **Cross-Site로 간주됨**
+    브라우저는 `https://boardbuddyapp.vercel.app`에서 발생한 요청이 백엔드 도메인(`https://boardbuddyapp.com`)으로의 **Cross-Site 요청**임을 인식
+2. **SameSite 쿠키 정책에 의해 차단**
+    기존에 이미 `SameSite=None` 으로 설정하고 PC환경에서 테스트 했으므로 해당 없음
+
+<Callout>
+문제를 해결하기 위해 **프론트엔드 도메인**을 `m.boardbuddyapp.com`으로 변경했다. 이로 인해 브라우저가 요청을 **Same-Site 요청**으로 간주하게 되었다.
+</Callout>
+
+<br/>
+
+**해결 과정 요약**
+
+| | **기존 구조** | **변경된 구조** |
+| --- | --- | --- |
+| **프론트엔드 도메인** | `https://boardbuddyapp.vercel.app` | `https://m.boardbuddyapp.com` |
+| **백엔드 도메인** | `https://boardbuddyapp.com` | `https://boardbuddyapp.com` |
+| **브라우저의 요청 인식** | Cross-Site 요청으로 간주 | Same-Site 요청으로 간주 |
+| **SameSite 정책 적용** | 쿠키 전송 차단 | 쿠키 전송 허용 |
+
+## 결과
+
+- **모바일 환경에서도 쿠키가 정상적으로 전송됨**
+    - Cross-Site가 아닌 Same-Site로 인식되면서 모바일 브라우저에서 쿠키가 차단되지 않음
+- **사용자 경험 개선**
+    - 모바일 환경에서도 사용자의 인증이 유지되어 접근성과 사용성 향상
+    
+## 교훈 및 추가 고려사항
+
+- **새로운 지식**
+    모바일 브라우저는 PC 브라우저보다 보안 정책이 엄격하므로 이를 염두에 두고 개발해야 한다는것을 알 수 있었음
+- **SameSite 정책 이해**
+    SameSite 정책은 브라우저의 보안 정책을 강화하기 위한 중요한 요소이므로, 모바일 환경에서는 정책이 더 엄격하게 적용되므로 이를 고려한 설계가 필요하다
+- **CNAME 레코드 활용**
+    프론트엔드와 백엔드를 같은 도메인 체계 내에서 동작하도록 구성하면 Cross-Site 관련 문제를 효과적으로 해결할 수 있다는 사실을 알게됨
+    
+
+## 결론
+
+이번 이슈 해결은 **도메인 구조와 브라우저 보안 정책의 상호작용**이 웹 서비스 동작에 얼마나 큰 영향을 미치는지 알 수 있었다.
+
+1. **문제를 해결하기 위한 핵심은 브라우저 정책의 정확한 이해**
+    모바일 환경에서 발생한 쿠키 전송 문제는 **SameSite 쿠키 정책**과 **Cross-Site 요청 처리 방식**을 제대로 이해하고 이를 바탕으로 적용함으로써 해결할 수 있었으며, 브라우저가 요청을 **Same-Site 요청**으로 처리하도록 도메인 구조를 재설계한 것이 중요했다.
+2. **브라우저의 기술적 변화에 대한 적응**
+    브라우저는 사용자 데이터를 보호하기 위해 SameSite 쿠키 정책과 HTTPS 의무화를 강화? 시키는 추세인것 같다. 이러한 변화를 단순히 문제를 발생시키는 원인으로 생각하지 않고, 애플리케이션의 보안 수준을 높일 수 있는 기회로 보면 좋을것 같다.
+3. **적용된 접근 방식**
+    AWS Route 53을 활용한 CNAME 설정과 도메인 매핑은 간단하면서도 이슈를 해결할 수 있는 중요한 방법이였으며, 브라우저가 어떠한 요청을 ‘동일한 사이트의 안전한 환경’으로 인식하도록 도메인을 재 설계한 점은 모바일 환경에서 안정적인 사용자 경험을 제공하는 데 중요한 역할을 했다.
+    
+요약하자면,  브라우저의 보안 정책 변화가 단순히 제약하는것만이 아니라 더 좋은 방향의 애플리케이션 설계를 가능하게 해주는 측면도 있는것 같다.
+
+따라서, **브라우저의 보안 정책을 공부하여 이해하고, 이를 기반으로 도메인을 설계하면 모바일 환경에서도 일관되고 안전한 서비스를 제공할 수 있을것이다.**
+
+## 레퍼런스
+
+[SameSite cookies explained](https://web.dev/articles/samesite-cookies-explained?hl=ko)
+[모바일 브라우저에서는 로그인이 안 되는 이유](https://blossoming-man.tistory.com/entry/%EB%AA%A8%EB%B0%94%EC%9D%BC-%EB%B8%8C%EB%9D%BC%EC%9A%B0%EC%A0%80%EC%97%90%EC%84%9C%EB%8A%94-%EB%A1%9C%EA%B7%B8%EC%9D%B8%EC%9D%B4-%EC%95%88-%EB%90%98%EB%8A%94-%EC%9D%B4%EC%9C%A0)
+[https://support.apple.com/ko-kr/guide/ipho](https://support.apple.com/ko-kr/guide/iphone/iphb01fc3c85/ios)
+[SOP(Same Origin Policy)의 한계와 쿠키(Cookie)의 SameSite 속성의 활용](https://ikjo.tistory.com/434)
+["Same-site" and "same-origin"](https://web.dev/articles/same-site-same-origin?hl=ko)
+[Origin, site, eTLD, eTLD+1, public suffix, PSL. What are they?](https://www.michalspacek.com/origin-site-etld-etld-plus-one-public-suffix-psl-what-are-they)
+
+## +) iOS 정책에 따른 쿠키 관리 방법의 차이?
+
+결론적으로 site를 통일해서 쿠키 문제는 해결이 되었으나, 궁금한 부분이 있어 추가로 남겨둔다.
+
+이 문제가 발생했을 때는 위에서 언급했듯이 2024년 8월 경이었고, 호환성 표를 보면 이미 2019년 정도부터 SameSite=None 속성을 모든 브라우저가 지원하고 있는 것을 알 수 있다.
+
+그렇다면 iOS에서 Safari는 크로스 사이트 추적 방지 옵션을 끄면 쿠키가 저장이 되었는데, 왜 크롬은 쿠키가 저장되지 않았던 걸까?🤔
+
+챗지피티에게 물어본 결과, iOS에서 Safari와 Chrome의 쿠키 저장에서 차이가 발생하는 주된 이유는 iOS 정책 때문이라고 한다.
+
+Safari는 Apple의 기본 브라우저로, iOS와 완전한 통합이 되어있어 쿠키 저장에 제한이 없다. 그러나 Chrome을 포함한 서드파티 브라우저는 iOS에서 몇 가지 제약사항이 있다.
+
+1. iOS의 정책상 모든 서드파티 브라우저는 Safari의 Webkit 엔진을 사용해야 한다.
+2. 쿠키와 웹 저장소에 대한 접근이 일부 제한될 수 있다.
+3. Intelligent Tracking Prevention(ITP) 정책의 영향을 받을 수 있다.
+4. ...
+
+Chrome은 안드로이드에서는 Blink 엔진, iOS에서는 Webkit 엔진 위에서 동작하는데, iOS에서 서드파티 브라우저에 몇 가지 제약을 걸고 있다. 따라서 이것 때문에 같은 Chrome이라도 iOS와 안드로이드에서 동작이나 성능이 다를 수 있다고 한다.
+
+이 내용은 아직 신뢰성있는 출처를 찾지 못해서 확실하다고는 말할 수 없다. 그래도 '오 이런 이유일수도..?' 싶었다.
+추후에 관련해서 자료를 좀 더 찾아보게 되면 추가하도록 하겠다.
