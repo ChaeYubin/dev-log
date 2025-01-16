@@ -45,7 +45,7 @@ export const Callout = (props: CalloutProps) => {
       className={`my-6 flex items-center gap-3 rounded-md px-5 py-4 ${metaObj.boxClass}`}
     >
       {type !== "normal" && (
-        <div>
+        <div className="self-start pt-1">
           <Icon />
         </div>
       )}
