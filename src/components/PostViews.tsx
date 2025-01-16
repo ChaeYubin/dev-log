@@ -10,11 +10,13 @@ interface Props {
 
 const PostViews = ({ title, views }: Props) => {
   useEffect(() => {
-    // 페이지 로드 시 조회수 증가
-    fetch(`/api`, {
-      method: "POST",
-      body: JSON.stringify({ title: decodeURIComponent(title) }),
-    });
+    if (process.env.NODE_ENV === "production") {
+      // 페이지 로드 시 조회수 증가
+      fetch(`/api`, {
+        method: "POST",
+        body: JSON.stringify({ title: decodeURIComponent(title) }),
+      });
+    }
   }, [title]);
 
   return (
