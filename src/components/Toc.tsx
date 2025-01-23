@@ -20,7 +20,7 @@ const Toc = () => {
   };
 
   return (
-    <div className="absolute invisible xl:visible left-full ml-12 h-full">
+    <div className="absolute hidden xl:block left-full ml-12 h-full">
       <div className="sticky w-[230px] top-20">
         <ul className="list-none text-[0.93rem]">
           <span className="inline-block font-semibold pb-2">On this page</span>
