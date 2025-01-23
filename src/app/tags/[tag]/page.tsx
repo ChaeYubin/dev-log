@@ -1,5 +1,10 @@
 import PostItem from "@/containers/posts/PostItem";
-import { getPostListByTag } from "@/utils/post";
+import { getPostListByTag, getTags } from "@/utils/post";
+
+export async function generateStaticParams() {
+  const tags = getTags();
+  return Array.from(tags.keys()).map((tag) => ({ tag }));
+}
 
 interface Props {
   params: { tag: string };

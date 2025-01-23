@@ -1,7 +1,11 @@
 import Giscus from "@/components/Giscus";
 import PostBody from "@/containers/posts/PostBody";
 import PostHeader from "@/containers/posts/PostHeader";
-import { getPostDetail } from "@/utils/post";
+import { getPostDetail, getPostFileNameList } from "@/utils/post";
+
+export async function generateStaticParams() {
+  return getPostFileNameList();
+}
 
 interface Props {
   postTitle: string;
