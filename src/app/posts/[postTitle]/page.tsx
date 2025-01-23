@@ -4,7 +4,8 @@ import PostHeader from "@/containers/posts/PostHeader";
 import { getPostDetail, getPostFileNameList } from "@/utils/post";
 
 export async function generateStaticParams() {
-  return getPostFileNameList();
+  const fileNameList = getPostFileNameList();
+  return fileNameList.map((postTitle) => ({ postTitle }));
 }
 
 interface Props {
