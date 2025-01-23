@@ -13,6 +13,16 @@ export const getPostList = () => {
   return posts;
 };
 
+// 모든 포스트 파일명 조회
+export const getPostFileNameList = () => {
+  const paths = getPostPaths();
+  const filePaths = paths.map((postPath) => getFilePath(postPath));
+
+  return filePaths.map((filePath) =>
+    filePath.split("/").slice(-1)[0].replace(".mdx", "")
+  );
+};
+
 // 최근 포스트 3개 조회
 export const getLatestPostList = () => {
   const posts = getPostList();
@@ -74,19 +84,21 @@ const parsePost = (postPath: string) => {
   return { ...postAbstract, ...postDetail };
 };
 
+const getFilePath = (postPath: string) => {
+  return path.sep === "\\"
+    ? postPath
+        .replaceAll("\\", "/")
+        .replace(`${BASE_PATH}/`, "")
+        .replace(".mdx", "")
+    : postPath
+        .slice(postPath.indexOf(BASE_PATH))
+        .replace(`${BASE_PATH}/`, "")
+        .replace(".mdx", "");
+};
+
 // MDX Abstract
 const parsePostAbstract = (postPath: string) => {
-  const filePath =
-    path.sep === "\\"
-      ? postPath
-          .replaceAll("\\", "/")
-          .replace(`${BASE_PATH}/`, "")
-          .replace(".mdx", "")
-      : postPath
-          .slice(postPath.indexOf(BASE_PATH))
-          .replace(`${BASE_PATH}/`, "")
-          .replace(".mdx", "");
-
+  const filePath = getFilePath(postPath);
   const [year, month, title] = filePath.split("/");
 
   const url = `/posts/${title}`;
